@@ -20,7 +20,7 @@ struct ProductsView: View {
                 }) {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
-                        .accentColor(.teal)
+                        .accentColor(.pink)
                 }
             }
             .padding(.leading, 15)
@@ -48,7 +48,7 @@ struct ProductsView: View {
                 .padding(10)
             }
         }
-        .background(AnimatedMeshGradient().edgesIgnoringSafeArea(.all))
+        .background(AnimatedMeshGradient().edgesIgnoringSafeArea(.all).blur(radius: 7).offset(x: 10, y: 10).opacity(1))
     }
 }
 

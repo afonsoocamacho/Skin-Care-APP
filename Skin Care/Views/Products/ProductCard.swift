@@ -11,15 +11,15 @@ struct ProductCardView: View {
     var body: some View {
         ZStack() {
             RoundedRectangle(cornerRadius: 15)
-                .fill(Color.gray)
+                .fill(Color.clear)
             VStack () {
                 HStack {
                     Spacer()
                     Button(action: {
-                        print("Add Product")
+                        print("Added to favorites Product")
                     }) {
                         Image(systemName: "heart")
-                            .accentColor(.teal)
+                            .accentColor(.pink)
                             .padding(.top, 10)
                             .padding(.trailing, 10)
                     }

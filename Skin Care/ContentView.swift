@@ -48,7 +48,7 @@ struct ContentView: View {
                 }
                 .tag(3)
         }
-        .accentColor(.teal)
+        .accentColor(.pink)
         .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
     }
