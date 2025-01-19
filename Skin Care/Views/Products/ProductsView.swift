@@ -48,6 +48,7 @@ struct ProductsView: View {
                 .padding(10)
             }
         }
+        .background(AnimatedMeshGradient().edgesIgnoringSafeArea(.all))
     }
 }
 
