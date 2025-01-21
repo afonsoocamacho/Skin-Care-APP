@@ -8,10 +8,25 @@
 import SwiftUI
 
 struct ProductCardView: View {
+    
+    let product: Product
+    
     var body: some View {
         ZStack() {
             RoundedRectangle(cornerRadius: 15)
                 .fill(Color.clear)
+            
+            if let imageData = product.imageData,
+               let uiImage = UIImage(data: imageData){
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: 150)
+                    .clipShape(RoundedRectangle(cornerRadius: 15))
+                    .offset(y: -20)
+            }
+            
+            
             VStack () {
                 HStack {
                     Spacer()
@@ -31,13 +46,13 @@ struct ProductCardView: View {
                         .frame(height: 60)
                     HStack{
                         VStack(alignment: .leading) {
-                            Text("Product Name")
+                            Text(product.name)
                                 .font(.headline)
                             HStack (alignment: .lastTextBaseline){
-                                Text("Type")
+                                Text(product.type)
                                     .font(.subheadline)
                                 Spacer()
-                                Text("Brand")
+                                Text(product.brand)
                                     .font(.footnote)
                             }
                         }
@@ -53,5 +68,24 @@ struct ProductCardView: View {
 }
 
 #Preview {
-    ProductCardView()
+    ProductCardView(
+        product: Product(
+            name: "Moisturizer",
+            type: "Skincare",
+            brand: "SkinCare Co",
+            instructions: "Apply evenly on face.",
+            ingredients: "Water, Glycerin, etc.",
+            price: 19.99,
+            quantity: "100ml",
+            status: .opened,
+            openDate: Date(),
+            lifeTime: 12,
+            expirationDate: nil,
+            imageData: nil,
+            isFavorite: false,
+            rating: 4,
+            createdAt: Date(),
+            lastUpdatedAt: Date()
+        )
+    )
 }

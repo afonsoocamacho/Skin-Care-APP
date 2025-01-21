@@ -11,10 +11,10 @@ import SwiftData
 
 
 @Model
-final class Products{
+final class Product{
     
     @Attribute(.unique)
-    var id: Int
+    var id: UUID = UUID()
     
     var name: String
     var type: String
@@ -22,7 +22,7 @@ final class Products{
     var instructions: String?
     var ingredients: String?
     var price: Double?
-    var quantity: Int?
+    var quantity: String?
     
     var status: Status
     
@@ -32,30 +32,22 @@ final class Products{
     
     @Attribute(.externalStorage)
     var imageData: Data?
-    var image: UIImage? {
-        if let imageData {
-            return UIImage(data: imageData)
-        } else {
-            return nil
-        }
-    }
+
     
     var isFavorite: Bool
     var rating: Int?
     
-    var CreatedAt: Date
-    var LastUpdatedAt: Date
+    var createdAt: Date
+    var lastUpdatedAt: Date
     
     init(
-        id: Int,
-        
         name: String,
         type: String,
         brand: String,
         instructions: String? = nil,
         ingredients: String? = nil,
         price: Double? = nil,
-        quantity: Int? = nil,
+        quantity: String? = nil,
         
         status: Status = .opened,
         
@@ -68,10 +60,9 @@ final class Products{
         isFavorite: Bool,
         rating: Int? = nil,
         
-        CreatedAt: Date = Date.now,
-        LastUpdatedAt: Date = Date.now
+        createdAt: Date = Date.now,
+        lastUpdatedAt: Date = Date.now
     ) {
-        self.id = id
         self.name = name
         self.type = type
         self.brand = brand
@@ -86,8 +77,8 @@ final class Products{
         self.imageData = imageData
         self.isFavorite = isFavorite
         self.rating = rating
-        self.CreatedAt = CreatedAt
-        self.LastUpdatedAt = LastUpdatedAt
+        self.createdAt = createdAt
+        self.lastUpdatedAt = lastUpdatedAt
     }
     
 }

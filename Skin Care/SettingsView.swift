@@ -23,14 +23,16 @@ struct SettingsView: View {
                     }
                 }
                 .scrollContentBackground(.hidden)
-                .background(.ultraThinMaterial)
+                .background(.clear)
                 
                 Spacer()
                 
                 Text("Version \(appVersion) ")
                     .font(.callout)
                     .foregroundColor(.gray)
+                    
             }
+            .background(.ultraThinMaterial)
                 
             
             }

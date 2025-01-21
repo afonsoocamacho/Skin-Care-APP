@@ -6,8 +6,32 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ProductsView: View {
+    
+    @Environment(\.modelContext) var context
+    
+    @State private var searchQuery = ""
+    @State private var showAddProductView = false
+    
+    @Query(sort: \Product.createdAt) var products: [Product] = []
+    
+    var filteredProducts: [Product] {
+        
+        if searchQuery.isEmpty{
+            return products
+        }
+        
+        let filteredProducts = products.compactMap { product in
+            let nameContainsQuery = product.name.range(of: searchQuery, options: .caseInsensitive) != nil
+            
+            return nameContainsQuery ? product : nil
+        }
+        
+        return filteredProducts
+    }
+    
     var body: some View {
         VStack {
             HStack (){
@@ -16,7 +40,8 @@ struct ProductsView: View {
                     .fontWeight(.bold)
                 Spacer()
                 Button(action: {
-                    print("filter item")
+                    print("add product")
+                    showAddProductView = true
                 }) {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
@@ -27,8 +52,31 @@ struct ProductsView: View {
             .padding(.trailing, 10)
             
             VStack{
-                Text("Filters and search bar")
-                //search bar
+                //Search bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("Search Products by Name...", text: $searchQuery)
+                        .foregroundColor(.primary)
+                        .textInputAutocapitalization(.none)
+                        .tint(.pink)
+                     if !searchQuery.isEmpty {
+                         Button(action: {
+                             searchQuery = "" // Clear the search query
+                         }) {
+                             Image(systemName: "xmark.circle.fill")
+                                 .foregroundColor(.gray)
+                            }
+                        }
+                }
+                .padding(10)
+                .background( RoundedRectangle(cornerRadius: 7)
+                                    .fill(Material.ultraThick)
+                )
+                .padding(.horizontal, 15)
+                .padding(.top, -10)
+                
+                Text("Filters")
                 //fiter options
                 //archived??
             }
@@ -37,19 +85,57 @@ struct ProductsView: View {
             ScrollView{
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 2), spacing: 10) {
                     
-                    ProductCardView()
-                    ProductCardView()
-                    ProductCardView()
-                    ProductCardView()
-                    ProductCardView()
+                    ForEach(filteredProducts) { product in
+                        ProductCardView(product: product)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    deleteProduct(product)
+                                } label: {
+                                    Label("Delete Product", systemImage: "trash")
+                                }
+                            }
+                    }
+                    
+                    
                     
                     
                 }
                 .padding(10)
             }
         }
-        .background(AnimatedMeshGradient().edgesIgnoringSafeArea(.all).blur(radius: 7).offset(x: 10, y: 10).opacity(1))
+        .background(AnimatedMeshGradient().edgesIgnoringSafeArea(.all).blur(radius: 7).offset(x: 10, y: 10).opacity(1).onTapGesture{ hideKeyboard()})
+        .sheet(isPresented: $showAddProductView) {  AddProductView()  }
+        .overlay{
+            if !searchQuery.isEmpty && filteredProducts.isEmpty && !products.isEmpty{
+                ContentUnavailableView.search
+            }
+            
+            if !searchQuery.isEmpty && filteredProducts.isEmpty && products.isEmpty{
+                ContentUnavailableView(label: {
+                    Label("No products", systemImage: "exclamationmark.triangle")
+                }, description: {
+                    Text("You don't have any products yet. Add a product to get started.")
+                }, actions: {
+                    Button("Add Product") { showAddProductView = true }
+                })
+            }
+            
+            if searchQuery.isEmpty && products.isEmpty {
+                ContentUnavailableView(label: {
+                    Label("No products", systemImage: "exclamationmark.triangle")
+                }, description: {
+                    Text("You don't have any products yet. Add a product to get started.")
+                }, actions: {
+                    Button("Add Product") { showAddProductView = true }
+                })
+            }
+        }
+        
     }
+    private func deleteProduct(_ product: Product) {
+            context.delete(product) // Remove the product from SwiftData context
+            try? context.save()     // Save changes to persist the deletion
+        }
 }
 
 #Preview {
