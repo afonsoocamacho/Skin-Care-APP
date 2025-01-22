@@ -11,10 +11,15 @@ struct ProductCardView: View {
     
     let product: Product
     
+    @State private var showDetailView = false
+    
     var body: some View {
         ZStack() {
             RoundedRectangle(cornerRadius: 15)
                 .fill(Color.clear)
+                .onTapGesture {
+                    showDetailView = true // Trigger the sheet
+                }
             
             if let imageData = product.imageData,
                let uiImage = UIImage(data: imageData){
@@ -64,6 +69,9 @@ struct ProductCardView: View {
             }
         }
         .frame(height: 200)
+        .sheet(isPresented: $showDetailView) {
+            ProductDetailView()
+        }
     }
 }
 
