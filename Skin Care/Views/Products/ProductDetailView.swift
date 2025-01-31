@@ -28,6 +28,10 @@ struct ProductDetailView: View {
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(Color.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.5)
+                        .padding(.horizontal, 20)
                         .padding(.bottom, 3)
                     
                     HStack{
@@ -318,7 +322,7 @@ struct ProductDetailView: View {
 #Preview {
     ProductDetailView(
         product: Product(
-            name: "Moisturizer",
+            name: "Moisturizer Test multilayber cream",
             type: "Skincare",
             brand: "SkinCare Co",
             instructions: "Apply evenly on the face.",

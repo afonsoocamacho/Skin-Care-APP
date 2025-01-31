@@ -53,12 +53,18 @@ struct ProductCardView: View {
                         VStack(alignment: .leading) {
                             Text(product.name)
                                 .font(.headline)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                             HStack (alignment: .lastTextBaseline){
                                 Text(product.type)
                                     .font(.subheadline)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
                                 Spacer()
                                 Text(product.brand)
                                     .font(.footnote)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
                             }
                         }
                         .padding(.leading, 10)

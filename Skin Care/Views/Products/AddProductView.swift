@@ -6,7 +6,11 @@
 //
 
 import SwiftUI
+import Vision
+import CoreImage
+import CoreImage.CIFilterBuiltins
 import PhotosUI
+
 
 struct AddProductView: View {
     
@@ -16,6 +20,7 @@ struct AddProductView: View {
     
     @State private var name: String = ""
     @State private var type: String = ""
+    @FocusState private var isTypeFieldFocused: Bool
     @State private var brand: String = ""
     @State private var instructions: String = ""
     @State private var ingredients: String = ""
@@ -75,8 +80,15 @@ struct AddProductView: View {
                 
                 Section(){
                     TextField("Product Name", text: $name)
+                        .disableAutocorrection(true)
+                        .keyboardType(.asciiCapable)
                     TextField("Type", text: $type)
+                        .focused($isTypeFieldFocused)
+                        .disableAutocorrection(true)
+                        .keyboardType(.asciiCapable)
                     TextField("Brand", text: $brand)
+                        .disableAutocorrection(true)
+                        .keyboardType(.asciiCapable)
                     
                 }
                 
@@ -84,7 +96,11 @@ struct AddProductView: View {
                     TextField("Instructions", text: $instructions)
                     TextField("Ingredients", text: $ingredients)
                     TextField("Price", value: $price, format: .currency(code: "EUR"))
+                        .disableAutocorrection(true)
+                        .keyboardType(.numbersAndPunctuation)
                     TextField("Quantity (ml, g)", text: $quantity)
+                        .disableAutocorrection(true)
+                        .keyboardType(.numbersAndPunctuation)
                 }
                 
                 Section("Status"){
@@ -129,16 +145,68 @@ struct AddProductView: View {
             .navigationTitle("Add Product")
             .navigationBarTitleDisplayMode(.inline)
             .task(id: selectedImage) {
-                if let data = try? await selectedImage?.loadTransferable(type: Data.self) {
-                    selectedImageData = data
-                    imageData = data // Ensure imageData is updated
+                print("📂 New image selected. Processing...")
+
+                if let data = try? await selectedImage?.loadTransferable(type: Data.self),
+                   let uiImage = UIImage(data: data) {
+                    
+                    print("✅ Image loaded successfully!")
+
+                    guard let inputImage = CIImage(image: uiImage) else {
+                        print("❌ Failed to create CIImage from uploaded image.")
+                        return
+                    }
+
+                    print("🔄 Running Vision processing to remove background...")
+
+                    Task {
+                        if let maskImage = await createMask(from: inputImage) {
+                            let outputImage = applyMask(mask: maskImage, to: inputImage)
+                            let finalImage = convertToUIImage(ciImage: outputImage)
+
+                            print("🎉 Background removed successfully!")
+                            
+                            selectedImageData = finalImage.pngData()
+                            imageData = selectedImageData
+                        } else {
+                            print("⚠️ Failed to remove background. Using original image.")
+                            selectedImageData = data
+                            imageData = data
+                        }
+                    }
                 } else {
+                    print("❌ Failed to load image data.")
                     selectedImageData = nil
-                    imageData = nil // Clear imageData if no valid image is loaded
+                    imageData = nil
                 }
             }
+
+
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
+                ToolbarItem(placement: .keyboard) {
+                    HStack {
+                        if isTypeFieldFocused { // ✅ Show only when "Type" is focused
+                            Button(action: {
+                                hideKeyboard()
+                            }) {
+                                Image(systemName: "moon.circle.fill") // SF Symbol for the toolbar
+                                    .font(.title2)
+                                    .tint(.pink) // Tint the icon
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            hideKeyboard()
+                        }) {
+                            Image(systemName: "keyboard.chevron.compact.down") // SF Symbol for the toolbar
+                                .font(.title2)
+                                .tint(.pink) // Tint the icon
+                        }
+                    }
+                    }
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         dismiss() // Close the view
@@ -154,6 +222,64 @@ struct AddProductView: View {
             
         }
     }
+    
+    
+// MARK - Functions
+    
+    private func createMask(from inputImage: CIImage) async -> CIImage? {
+        
+        print("🔍 Starting mask generation...")
+        
+        let request = VNGenerateForegroundInstanceMaskRequest()
+        let handler = VNImageRequestHandler(ciImage: inputImage)
+
+        do {
+            try handler.perform([request])
+            print("✅ Vision request performed successfully!")
+
+            if let result = request.results?.first {
+                print("📸 Mask generated successfully. Processing...")
+                let mask = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: handler)
+                print("🖼 Mask applied successfully!")
+                return CIImage(cvPixelBuffer: mask)
+            }
+        } catch {
+            print("Error generating mask: \(error)")
+            
+        }
+
+        return nil
+    }
+
+    private func applyMask(mask: CIImage, to image: CIImage) -> CIImage {
+        print("🎭 Applying mask to remove background...")
+        
+        let filter = CIFilter.blendWithMask()
+        filter.inputImage = image
+        filter.maskImage = mask
+        filter.backgroundImage = CIImage.empty()
+        
+        if let outputImage = filter.outputImage {
+                print("✅ Successfully applied mask!")
+                return outputImage
+            } else {
+                print("❌ Error: Mask application failed!")
+                return image
+            }
+    }
+
+    private func convertToUIImage(ciImage: CIImage) -> UIImage {
+        print("🔄 Converting CIImage to UIImage...")
+        
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            fatalError("❌ Failed to render CGImage from CIImage")
+        }
+        print("✅ Conversion successful!")
+        return UIImage(cgImage: cgImage)
+    }
+
+    
     private func saveProduct() {
         let product = Product(
             name: name,
