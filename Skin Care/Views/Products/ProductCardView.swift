@@ -11,15 +11,13 @@ struct ProductCardView: View {
     
     let product: Product
     
-    @State private var showDetailView = false
+    
     
     var body: some View {
         ZStack() {
             RoundedRectangle(cornerRadius: 15)
                 .fill(Color.clear)
-                .onTapGesture {
-                    showDetailView = true // Trigger the sheet
-                }
+                
             
             if let imageData = product.imageData,
                let uiImage = UIImage(data: imageData){
@@ -35,10 +33,12 @@ struct ProductCardView: View {
             VStack () {
                 HStack {
                     Spacer()
+                    
                     Button(action: {
-                        print("Added to favorites Product")
+                        product.isFavorite.toggle() // Assuming product is mutable
+                            print("Favorite status: \(product.isFavorite)")
                     }) {
-                        Image(systemName: "heart")
+                        Image(systemName: product.isFavorite ? "heart.fill" : "heart")
                             .accentColor(.pink)
                             .padding(.top, 10)
                             .padding(.trailing, 10)
@@ -69,9 +69,7 @@ struct ProductCardView: View {
             }
         }
         .frame(height: 200)
-        .sheet(isPresented: $showDetailView) {
-            ProductDetailView()
-        }
+        
     }
 }
 

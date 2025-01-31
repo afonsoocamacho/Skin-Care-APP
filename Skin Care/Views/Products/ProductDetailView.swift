@@ -5,11 +5,12 @@
 //  Created by Afonso Camacho on 22/01/2025.
 //
 
+import PhotosUI
 import SwiftUI
 
 struct ProductDetailView: View {
     
-    //@State var product: Product
+    let product: Product
     @Environment(\.dismiss) private var dismiss
     
     
@@ -23,23 +24,23 @@ struct ProductDetailView: View {
                     
                     Spacer(minLength: 30)
                     
-                    Text("Product Name")
+                    Text(product.name)
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(Color.white)
                         .padding(.bottom, 3)
                     
                     HStack{
-                        Text("Type")
+                        Text(product.type)
                         Text("·")
                             .font(.title)
                             .fontWeight(.bold)
-                        Text("Brand")
+                        Text(product.brand)
                     }
                     .foregroundColor(Color.white)
                     .padding(0)
                     
-                    Text("Status")
+                    Text(product.status.descr)
                         .foregroundColor(Color.white)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 15)
@@ -55,15 +56,35 @@ struct ProductDetailView: View {
                             ZStack{
                                 RoundedRectangle(cornerRadius: 15)
                                     .fill(.white)
-                                    .frame(width: .infinity, height: 320)
+                                    .frame(width: UIScreen.main.bounds.width - 80, height: 350)
+                                
+                                if product.imageData != nil,
+                                      let uiImage = UIImage(data: product.imageData!){
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(maxWidth: .infinity, maxHeight: 330)
+                                        .clipShape(RoundedRectangle(cornerRadius: 15))
+                                        
+                                } else {
+                                    Image(systemName: "photo")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(maxWidth: .infinity, maxHeight: 150)
+                                        .clipShape(RoundedRectangle(cornerRadius: 15))
+                                        
+                                }
+                                
+
                                 VStack{
                                     
                                 HStack{
                                     Spacer()
                                     Button(action: {
-                                        print("Added to favorites Product")
+                                        product.isFavorite.toggle() // Assuming product is mutable
+                                            print("Favorite status: \(product.isFavorite)")
                                     }) {
-                                        Image(systemName: "heart")
+                                        Image(systemName: product.isFavorite ? "heart.fill" : "heart")
                                             .font(.title2)
                                             .accentColor(.pink)
                                             .padding(.top, 15)
@@ -83,8 +104,9 @@ struct ProductDetailView: View {
                                 .fontWeight(.semibold)
                                 .padding(.bottom, 5)
                             
-                            Text("How to use this product will go here probably will be a big space, to have all the instructions of how  to use. ")
+                            Text(product.instructions ?? "No instructions available.")
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 5)
                             
@@ -97,38 +119,134 @@ struct ProductDetailView: View {
                                 .fontWeight(.semibold)
                                 .padding(.bottom, 5)
                             
-                            Text("How to use this product will go here probably will be a big space, to have all the instructions of how  to use. ")
+                            Text(product.ingredients ?? "No ingredients available.")
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 5)
                         
                             Divider()
                             HStack{
-                                VStack (alignment: .leading){
+                                
+                                Spacer()
+                                
+                                VStack (){
                                     
                                     Text("Open Date")
                                         .font(.headline)
                                         .fontWeight(.semibold)
                                         .padding(.bottom, 5)
+                                        .multilineTextAlignment(.center)
                                     
-                                    Text("12/12/2025")
+                                    Text(product.openDate?.formatted(date: .numeric, time: .omitted) ?? "No open date available.")
                                 }
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 5)
+                                
+                                Spacer()
                                 
                                 Divider()
                                 
-                                VStack (alignment: .leading){
+                                if product.expirationDate != nil {
+                                    VStack (){
+                                        
+                                        Text("Expiration Date")
+                                            .font(.headline)
+                                            .fontWeight(.semibold)
+                                            .padding(.bottom, 5)
+                                            .multilineTextAlignment(.center)
+                                        
+                                        Text(product.expirationDate?.formatted(date: .numeric, time: .omitted) ?? "No open date available.")
+                                    }
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 5)
                                     
-                                    Text("Open Date")
+                                    Spacer()
+                                    
+                                    Divider()
+                                }
+                                
+                                Spacer()
+                                
+                                VStack (){
+                                    
+                                    Text("LifeTime")
                                         .font(.headline)
                                         .fontWeight(.semibold)
                                         .padding(.bottom, 5)
+                                        .multilineTextAlignment(.center)
                                     
-                                    Text("12/12/2025")
+                                    Text("\(product.lifeTime.map(String.init) ?? "N/A") Months")
                                 }
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 5)
+                                
+                                Spacer()
+                            }
+                            
+                            
+                            Divider()
+                            
+                            VStack (){
+                                
+                                Text("Your Rating")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .padding(.bottom, 5)
+                                    .multilineTextAlignment(.center)
+                                
+                                HStack {
+                                    ForEach(0..<5, id: \.self) { index in
+                                        Image(systemName: index < (product.rating ?? 0) ? "star.fill" : "star")
+                                            .font(.title2)
+                                            .foregroundColor(index < (product.rating ?? 0) ? .yellow : .gray)
+                                    }
+                                }
+
+                            }
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 5)
+                            
+                            Divider()
+                            
+                            HStack{
+                                
+                                Spacer()
+                                
+                                VStack (){
+                                    
+                                    Text("Quantity")
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                        .padding(.bottom, 5)
+                                        .multilineTextAlignment(.center)
+                                    
+                                    Text(product.quantity ?? "N/A")
+                                }
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 5)
+                                
+                                Spacer()
+                                
+                                Divider()
+                                
+                                Spacer()
+                                
+                                VStack (){
+                                    
+                                    Text("Price")
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                        .padding(.bottom, 5)
+                                        .multilineTextAlignment(.center)
+                                    
+                                    Text(product.price?.formatted(.currency(code: "EUR")) ?? "N/A")
+                                }
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 5)
+                                
+                                Spacer()
+                                
                             }
                         }
                         .padding(25)
@@ -139,12 +257,13 @@ struct ProductDetailView: View {
                         
                         
                         VStack {
-                            Text("Last used: 22/01/2025")
+                            Text("Last updated: \(product.lastUpdatedAt.formatted(date: .numeric, time: .omitted))")
                                 .font(.subheadline)
-                            Text("Last updated: 22/01/2025")
+                                .padding(.top, 2)
+
+                            Text("Created at: \(product.createdAt.formatted(date: .numeric, time: .omitted))")
                                 .font(.subheadline)
-                            Text("Created at: 22/01/2025")
-                                .font(.subheadline)
+                                .padding(.top, 2)
                         }
                         .padding(.vertical, 20)
                        
@@ -164,25 +283,58 @@ struct ProductDetailView: View {
                 
                 
             }
-        }
-        .toolbar {
-        // Close Button
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Close") {
-                    dismiss()
+        
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left") // Back button icon
+                            .foregroundColor(.white)
+                    }
                 }
+
+//                ToolbarItem(placement: .principal) { // Centered title
+//                    Text("Product Details")
+//                        .font(.headline)
+//                        .foregroundColor(.white)
+//                }
+
+                
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            print("Edit tapped")
+                        }) {
+                            Text("Edit")
+                                .foregroundColor(.white) // Change color
+                                .fontWeight(.semibold) // Change font weight
+                        }
+                    }
+                
             }
 
-        // Edit Button
-             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Edit") {
-                    // Show the edit view
-                }
-            }
         }
     }
 }
 
 #Preview {
-    ProductDetailView()
+    ProductDetailView(
+        product: Product(
+            name: "Moisturizer",
+            type: "Skincare",
+            brand: "SkinCare Co",
+            instructions: "Apply evenly on the face.",
+            ingredients: "Water, Glycerin, etc.",
+            price: 19.99,
+            quantity: "100ml",
+            status: .opened,
+            openDate: Date(),
+            lifeTime: 12,
+            expirationDate: nil,
+            imageData: nil,
+            isFavorite: false,
+            rating: 4,
+            createdAt: Date(),
+            lastUpdatedAt: Date()
+        )
+    )
 }
+

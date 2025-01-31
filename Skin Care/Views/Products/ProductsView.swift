@@ -14,6 +14,7 @@ struct ProductsView: View {
     
     @State private var searchQuery = ""
     @State private var showAddProductView = false
+    @State private var selectedProduct: Product? // Track the selected product
     
     @Query(sort: \Product.createdAt) var products: [Product] = []
     
@@ -53,29 +54,47 @@ struct ProductsView: View {
             
             VStack{
                 //Search bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                    TextField("Search Products by Name...", text: $searchQuery)
-                        .foregroundColor(.primary)
-                        .textInputAutocapitalization(.none)
-                        .tint(.pink)
-                     if !searchQuery.isEmpty {
-                         Button(action: {
-                             searchQuery = "" // Clear the search query
-                         }) {
-                             Image(systemName: "xmark.circle.fill")
-                                 .foregroundColor(.gray)
+                HStack{
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.gray)
+                        TextField("Search Products by Name...", text: $searchQuery)
+                            .foregroundColor(.primary)
+                            .textInputAutocapitalization(.none)
+                            .tint(.pink)
+                        if !searchQuery.isEmpty {
+                            Button(action: {
+                                searchQuery = "" // Clear the search query
+                                hideKeyboard()
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.gray)
                             }
                         }
+                    }
+                    .padding(10)
+                    .background( RoundedRectangle(cornerRadius: 7)
+                        .fill(Material.ultraThick)
+                                 
+                    )
+                    .padding(.horizontal, 15)
+                    .padding(.top, -10)
+                    
+                    //if !searchQuery.isEmpty {
+                  //      Button(action: {
+                   //         searchQuery = "" // Clear the search query
+                  //          hideKeyboard()
+                  //      }) {
+                //            Text("Cancel")
+                  //              .foregroundColor(.pink)
+                    //            .frame(alignment: .center)
+                      //          .padding(.trailing, 15)
+                        //        .padding(.leading, -10)
+                          //      .padding(.bottom, 10)
+                    //    }
+                 //   }
+                    
                 }
-                .padding(10)
-                .background( RoundedRectangle(cornerRadius: 7)
-                                    .fill(Material.ultraThick)
-                )
-                .padding(.horizontal, 15)
-                .padding(.top, -10)
-                
                 Text("Filters")
                 //fiter options
                 //archived??
@@ -87,6 +106,9 @@ struct ProductsView: View {
                     
                     ForEach(filteredProducts) { product in
                         ProductCardView(product: product)
+                            .onTapGesture {
+                               selectedProduct = product // Set the selected product
+                                                        }
                             .contextMenu {
                                 Button(role: .destructive) {
                                     deleteProduct(product)
@@ -94,6 +116,7 @@ struct ProductsView: View {
                                     Label("Delete Product", systemImage: "trash")
                                 }
                             }
+                            
                     }
                     
                     
@@ -104,6 +127,9 @@ struct ProductsView: View {
             }
         }
         .background(AnimatedMeshGradient().edgesIgnoringSafeArea(.all).blur(radius: 7).offset(x: 10, y: 10).opacity(1).onTapGesture{ hideKeyboard()})
+        .sheet(item: $selectedProduct) { product in
+                    ProductDetailView(product: product)
+                }
         .sheet(isPresented: $showAddProductView) {  AddProductView()  }
         .overlay{
             if !searchQuery.isEmpty && filteredProducts.isEmpty && !products.isEmpty{
