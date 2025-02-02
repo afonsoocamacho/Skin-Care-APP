@@ -75,6 +75,7 @@ struct ProductCardView: View {
             }
         }
         .frame(height: 200)
+        .background(Color.white.opacity(0.001))
         
     }
 }

@@ -160,12 +160,14 @@ struct AddProductView: View {
                     print("🔄 Running Vision processing to remove background...")
 
                     Task {
-                        if let maskImage = await createMask(from: inputImage) {
-                            let outputImage = applyMask(mask: maskImage, to: inputImage)
+                        let (maskImage, boundingBox) = await createMask(from: inputImage)
+
+                        if let maskImage = maskImage {
+                            let outputImage = applyMask(mask: maskImage, to: inputImage, boundingBox: boundingBox)
                             let finalImage = convertToUIImage(ciImage: outputImage)
 
-                            print("🎉 Background removed successfully!")
-                            
+                            print("🎉 Background removed & cropped successfully!")
+
                             selectedImageData = finalImage.pngData()
                             imageData = selectedImageData
                         } else {
@@ -180,6 +182,9 @@ struct AddProductView: View {
                     imageData = nil
                 }
             }
+
+
+
 
 
             .scrollDismissesKeyboard(.interactively)
@@ -225,11 +230,10 @@ struct AddProductView: View {
     
     
 // MARK - Functions
-    
-    private func createMask(from inputImage: CIImage) async -> CIImage? {
-        
+
+    private func createMask(from inputImage: CIImage) async -> (CIImage?, CGRect?) {
         print("🔍 Starting mask generation...")
-        
+
         let request = VNGenerateForegroundInstanceMaskRequest()
         let handler = VNImageRequestHandler(ciImage: inputImage)
 
@@ -239,34 +243,115 @@ struct AddProductView: View {
 
             if let result = request.results?.first {
                 print("📸 Mask generated successfully. Processing...")
-                let mask = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: handler)
-                print("🖼 Mask applied successfully!")
-                return CIImage(cvPixelBuffer: mask)
+
+                let maskPixelBuffer = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: handler)
+
+                let maskImage = CIImage(cvPixelBuffer: maskPixelBuffer)
+
+                // ✅ Compute the bounding box from non-transparent pixels in the mask
+                if let boundingBox = computeBoundingBox(from: maskImage) {
+                    print("📏 Detected Bounding Box: \(boundingBox)")
+                    return (maskImage, boundingBox)
+                } else {
+                    print("⚠️ Could not determine bounding box, using full image size.")
+                    return (maskImage, inputImage.extent)
+                }
             }
         } catch {
-            print("Error generating mask: \(error)")
-            
+            print("❌ Error generating mask: \(error)")
         }
 
-        return nil
+        return (nil, nil)
     }
 
-    private func applyMask(mask: CIImage, to image: CIImage) -> CIImage {
-        print("🎭 Applying mask to remove background...")
-        
+    private func computeBoundingBox(from maskImage: CIImage) -> CGRect? {
+        let context = CIContext()
+        guard let maskCGImage = context.createCGImage(maskImage, from: maskImage.extent) else {
+            print("❌ Failed to create CGImage from mask.")
+            return nil
+        }
+
+        let width = maskCGImage.width
+        let height = maskCGImage.height
+        let bytesPerRow = width
+        let pixelData = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height)
+        defer { pixelData.deallocate() }
+
+        let colorSpace = CGColorSpaceCreateDeviceGray()
+        let bitmapContext = CGContext(
+            data: pixelData,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.none.rawValue
+        )
+
+        guard let cgContext = bitmapContext else {
+            print("❌ Failed to create bitmap context.")
+            return nil
+        }
+
+        cgContext.draw(maskCGImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        // Scan to find non-transparent pixels
+        var minX = width, minY = height, maxX = 0, maxY = 0
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let pixelValue = pixelData[y * width + x]
+                if pixelValue > 0 { // Foreground detected
+                    minX = min(minX, x)
+                    minY = min(minY, y)
+                    maxX = max(maxX, x)
+                    maxY = max(maxY, y)
+                }
+            }
+        }
+
+        if minX >= maxX || minY >= maxY {
+            print("⚠️ No subject detected in mask.")
+            return nil
+        }
+
+        // Convert coordinates to Core Image coordinate system
+        let boundingBox = CGRect(
+            x: CGFloat(minX),
+            y: CGFloat(height - maxY), // Flip Y-axis for CIImage
+            width: CGFloat(maxX - minX),
+            height: CGFloat(maxY - minY)
+        )
+
+        print("📏 Computed Bounding Box: \(boundingBox)")
+        return boundingBox
+    }
+
+
+
+    private func applyMask(mask: CIImage, to image: CIImage, boundingBox: CGRect?) -> CIImage {
+        print("🎭 Applying mask to remove background and cropping...")
+
         let filter = CIFilter.blendWithMask()
         filter.inputImage = image
         filter.maskImage = mask
         filter.backgroundImage = CIImage.empty()
-        
-        if let outputImage = filter.outputImage {
-                print("✅ Successfully applied mask!")
-                return outputImage
-            } else {
-                print("❌ Error: Mask application failed!")
-                return image
-            }
+
+        guard let outputImage = filter.outputImage else {
+            print("❌ Error: Mask application failed!")
+            return image
+        }
+
+        // ✅ Crop to the computed bounding box
+        if let boundingBox = boundingBox {
+            print("✂️ Cropping image to bounding box: \(boundingBox)")
+            return outputImage.cropped(to: boundingBox)
+        }
+
+        return outputImage
     }
+
+
 
     private func convertToUIImage(ciImage: CIImage) -> UIImage {
         print("🔄 Converting CIImage to UIImage...")

@@ -13,6 +13,8 @@ struct ProductDetailView: View {
     let product: Product
     @Environment(\.dismiss) private var dismiss
     
+    @State private var isInstructionsExpanded = false
+    @State private var isIngredientsExpanded = false
     
     var body: some View {
         NavigationStack{
@@ -35,23 +37,65 @@ struct ProductDetailView: View {
                         .padding(.bottom, 3)
                     
                     HStack{
-                        Text(product.type)
-                        Text("·")
-                            .font(.title)
-                            .fontWeight(.bold)
-                        Text(product.brand)
+                        HStack{
+                            Text(product.brand)
+                                .multilineTextAlignment(.trailing)
+                                .lineLimit(1)
+                        }
+                        
+                        HStack {
+                            Text("·")
+                                .font(.title)
+                                .fontWeight(.bold)
+                        }
+                        
+                        HStack {
+                            Text(product.type)
+                                .multilineTextAlignment(.trailing)
+                                .lineLimit(1)
+                        }
+                        
                     }
                     .foregroundColor(Color.white)
                     .padding(0)
                     
-                    Text(product.status.descr)
+                    if product.status.descr == "Expired" {
+                        
+                        HStack{
+                            
+                            if product.expirationDate == nil || (product.expirationDate?.formatted(date: .numeric, time: .omitted) ?? "").isEmpty {
+                                
+                                Text("Expired @ unknown")
+                                    
+                                
+                            } else {
+                                
+                                Text("Expired @ \(product.expirationDate!.formatted(date: .numeric, time: .omitted))")
+                                
+                            }
+
+                            
+                        }
                         .foregroundColor(Color.white)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 15)
                         .background(
                             RoundedRectangle(cornerRadius: 30)
-                                //.fill(.green.opacity(0.2))
+                            //.fill(.green.opacity(0.2))
                                 .fill(.ultraThinMaterial) )
+                        
+                    } else {
+                        
+                        Text(product.status.descr)
+                            .foregroundColor(Color.white)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 15)
+                            .background(
+                                RoundedRectangle(cornerRadius: 30)
+                                //.fill(.green.opacity(0.2))
+                                    .fill(.ultraThinMaterial) )
+                        
+                    }
                     
                     Spacer(minLength: 10)
                     ScrollView{
@@ -67,7 +111,7 @@ struct ProductDetailView: View {
                                     Image(uiImage: uiImage)
                                         .resizable()
                                         .scaledToFit()
-                                        .frame(maxWidth: .infinity, maxHeight: 330)
+                                        .frame(maxWidth: .infinity, maxHeight: 300)
                                         .clipShape(RoundedRectangle(cornerRadius: 15))
                                         
                                 } else {
@@ -101,33 +145,96 @@ struct ProductDetailView: View {
                             .padding(.bottom, 10)
                         
                         
-                        VStack (alignment: .leading){
+                            VStack(alignment: .leading) {
+                                
+                                if let instructions = product.instructions, instructions.count > 120 { // Adjust character count if needed
+                                    HStack{
+                                        
+                                        Text("Instructions")
+                                            .font(.headline)
+                                            .fontWeight(.semibold)
+                                            .padding(.bottom, 5)
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: {
+                                            isInstructionsExpanded.toggle()
+                                        }) {
+                                            Text(isInstructionsExpanded ? "See Less" : "See More")
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                        }
+                                        .padding(.bottom, 5)
+                                        
+                                        
+                                    }
+                                    
+                                } else {
+                                    
+                                    Text("Instructions")
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                        .padding(.bottom, 5)
+                                    
+                                }
                             
-                            Text("Instructions")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                                .padding(.bottom, 5)
-                            
-                            Text(product.instructions ?? "No instructions available.")
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 5)
+
+                                Text(product.instructions ?? "No instructions available.")
+                                    .lineLimit(isInstructionsExpanded ? nil : 3)
+                                    //.animation(.easeInOut, value: isInstructionsExpanded)
+                                
+                               
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 5)
+
                             
                             Divider()
                             
-                        VStack (alignment: .leading){
+                            VStack(alignment: .leading) {
+                                
+                                if let ingredients = product.ingredients, ingredients.count > 120 { // Adjust character count if needed
+                                    HStack{
+                                        
+                                        Text("Ingredients")
+                                            .font(.headline)
+                                            .fontWeight(.semibold)
+                                            .padding(.bottom, 5)
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: {
+                                            isIngredientsExpanded.toggle()
+                                        }) {
+                                            Text(isIngredientsExpanded ? "See Less" : "See More")
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                        }
+                                        .padding(.bottom, 5)
+                                        
+                                        
+                                    }
+                                    
+                                } else {
+                                    
+                                    Text("Ingredients")
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                        .padding(.bottom, 5)
+                                    
+                                }
                             
-                            Text("Ingredients")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                                .padding(.bottom, 5)
-                            
-                            Text(product.ingredients ?? "No ingredients available.")
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 5)
+
+                                Text(product.ingredients ?? "No ingredients available.")
+                                    .lineLimit(isIngredientsExpanded ? nil : 3)
+                                    //.animation(.easeInOut, value: isInstructionsExpanded)
+                                
+                               
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 5)
                         
                             Divider()
                             HStack{
@@ -325,14 +432,14 @@ struct ProductDetailView: View {
             name: "Moisturizer Test multilayber cream",
             type: "Skincare",
             brand: "SkinCare Co",
-            instructions: "Apply evenly on the face.",
+            instructions: "Apply evenly on the face. andn thes just to test the button when will it appear cuz it shouln't display much contnt there and then the buttun wand i wanna check theanimation",
             ingredients: "Water, Glycerin, etc.",
             price: 19.99,
             quantity: "100ml",
-            status: .opened,
+            status: .expired,
             openDate: Date(),
             lifeTime: 12,
-            expirationDate: nil,
+            expirationDate: Date(),
             imageData: nil,
             isFavorite: false,
             rating: 4,
