@@ -6,8 +6,16 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct RoutinesView: View {
+    
+    @Environment(\.modelContext) var context
+    
+    @State private var searchQuery = ""
+    
+    @Query(sort: \Routine.createdAt) var routines: [Routine] = []
+    
     var body: some View {
         VStack {
             HStack (){
@@ -19,7 +27,7 @@ struct RoutinesView: View {
                     print("Add Routine")
                 }) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.title2)
+                        .font(.title)
                         .accentColor(.pink)
                 }
             }
@@ -27,65 +35,82 @@ struct RoutinesView: View {
             .padding(.trailing, 10)
             
             VStack{
-                Text("Filters and search bar")
-                //search bar
+                HStack{
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.gray)
+                        TextField("Search Routines by Name...", text: $searchQuery)
+                            .foregroundColor(.primary)
+                            .textInputAutocapitalization(.none)
+                            .tint(.pink)
+                            .disableAutocorrection(true)
+                            .keyboardType(.asciiCapable)
+                        if !searchQuery.isEmpty {
+                            Button(action: {
+                                searchQuery = "" // Clear the search query
+                                hideKeyboard()
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    .padding(10)
+                    .background( RoundedRectangle(cornerRadius: 7)
+                        .fill(Material.ultraThick)
+                                 
+                                 
+                    )
+                    .padding(.horizontal, 15)
+                    .padding(.top, -10)
+                    
+                    Button(action: {
+                        print("Search")
+                       }) {
+                           Image(systemName: "line.3.horizontal.decrease.circle")
+                               .font(.title3)
+                               .tint(.pink)
+                               .frame(alignment: .center)
+                               .padding(.leading, -10)
+                               .padding(.trailing, 15)
+                               .padding(.bottom, 10)
+                               //.onTapGesture(perform: .bounce.up.byLayer)
+                           
+                           
+                           
+                       }
+                    
+                    //if !searchQuery.isEmpty {
+                  //      Button(action: {
+                   //         searchQuery = "" // Clear the search query
+                  //          hideKeyboard()
+                  //      }) {
+                //            Text("Cancel")
+                  //              .foregroundColor(.pink)
+                    //            .frame(alignment: .center)
+                      //          .padding(.trailing, 15)
+                        //        .padding(.leading, -10)
+                          //      .padding(.bottom, 10)
+                    //    }
+                 //   }
+                    
+                }
+                Text("Filters")
                 //fiter options
                 //archived??
             }
             .padding(.top, 5)
             
             ScrollView{
-                ZStack{
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(Color.gray.opacity(0.2))
-                        .fill(.thickMaterial)
-                    
-                    HStack{
-                        VStack (alignment: .leading){
-                            Text("Morning Routine")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                            Text("9 Steps")
-                                .font(.subheadline)
-                            HStack{
-                                Circle()
-                                    .fill(Color.green)
-                                    .frame(width: 20, height: 20)
-                                Circle()
-                                    .fill(Color.pink)
-                                    .frame(width: 20, height: 20)
-                                    .offset(x:-20)
-                                Circle()
-                                    .fill(Color.blue)
-                                    .frame(width: 20, height: 20)
-                                    .offset(x:-40)
-                                Circle()
-                                    .fill(Color.yellow)
-                                    .frame(width: 20, height: 20)
-                                    .offset(x:-57)
-                                Circle()
-                                    .fill(Color.orange)
-                                    .frame(width: 20, height: 20)
-                                    .offset(x:-75)
-                                Text("+4")
-                                    .font(.footnote)
-                                    .offset(x:-80)
-                                    .opacity(0.35)
-                                    
-                            }
-                            
-                                
-                                
-                        }
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.title)
-                    }
-                    .padding(15)
+                
+                ForEach(routines) { routine in
+                        RoutineCardView(routine: routine)
+                        .padding(.horizontal, 15)
+                        .padding(.bottom, 3)
                 }
-                .frame(height: 100)
-                .padding(10)
+                
+             //   Text("^[\(routines.count) resoults found](inflect: true)")
+             //       .font(.callout)
                     
             }
         }
@@ -94,5 +119,32 @@ struct RoutinesView: View {
 }
 
 #Preview {
-    RoutinesView()
+    // ✅ Create a SwiftData container for preview purposes
+    do {
+        let container = try ModelContainer(for: Routine.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+
+        // ✅ Create sample Product data
+        let sampleProducts = [
+            Product(name: "Face Cleanser", type: "Cleanser", brand: "SkinCo", instructions: "Apply morning and night.", ingredients: "Water, Aloe Vera", price: 15.99, quantity: "150ml", status: .opened, openDate: Date(), lifeTime: 12, expirationDate: nil, imageData: nil, isFavorite: false, rating: 4, createdAt: Date(), lastUpdatedAt: Date()),
+            Product(name: "Moisturizer", type: "Cream", brand: "GlowCare", instructions: "Apply after cleansing.", ingredients: "Shea Butter, Glycerin", price: 19.99, quantity: "100ml", status: .opened, openDate: Date(), lifeTime: 12, expirationDate: nil, imageData: nil, isFavorite: true, rating: 5, createdAt: Date(), lastUpdatedAt: Date())
+        ]
+
+        // ✅ Create sample Routines
+        let sampleRoutines = [
+            Routine(id: UUID(), name: "Morning Routine", type: .morning, timesDone: 2, products: sampleProducts, isFavorite: true, rating: 5, createdAt: Date(), lastUpdatedAt: Date()),
+            Routine(id: UUID(), name: "Night Routine", type: .night, timesDone: 0, products: sampleProducts, isFavorite: false, rating: 4, createdAt: Date(), lastUpdatedAt: Date()),
+            Routine(id: UUID(), name: "Special Care", type: .special, timesDone: 3, products: sampleProducts, isFavorite: false, rating: 3, createdAt: Date(), lastUpdatedAt: Date())
+        ]
+
+        // ✅ Insert sample data into the preview container
+        for routine in sampleRoutines {
+            container.mainContext.insert(routine)
+        }
+
+        // ✅ Attach the SwiftData environment
+        return RoutinesView()
+            .modelContainer(container)
+    } catch {
+        fatalError("Failed to create preview ModelContainer: \(error)")
+    }
 }

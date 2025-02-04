@@ -45,7 +45,7 @@ struct ProductsView: View {
                     showAddProductView = true
                 }) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.title2)
+                        .font(.title)
                         .accentColor(.pink)
                 }
             }
@@ -62,6 +62,8 @@ struct ProductsView: View {
                             .foregroundColor(.primary)
                             .textInputAutocapitalization(.none)
                             .tint(.pink)
+                            .disableAutocorrection(true)
+                            .keyboardType(.asciiCapable)
                         if !searchQuery.isEmpty {
                             Button(action: {
                                 searchQuery = "" // Clear the search query
@@ -76,9 +78,26 @@ struct ProductsView: View {
                     .background( RoundedRectangle(cornerRadius: 7)
                         .fill(Material.ultraThick)
                                  
+                                 
                     )
                     .padding(.horizontal, 15)
                     .padding(.top, -10)
+                    
+                    Button(action: {
+                        print("Search")
+                       }) {
+                           Image(systemName: "line.3.horizontal.decrease.circle")
+                               .font(.title3)
+                               .tint(.pink)
+                               .frame(alignment: .center)
+                               .padding(.leading, -10)
+                               .padding(.trailing, 15)
+                               .padding(.bottom, 10)
+                               //.onTapGesture(perform: .bounce.up.byLayer)
+                           
+                           
+                           
+                       }
                     
                     //if !searchQuery.isEmpty {
                   //      Button(action: {
@@ -131,6 +150,23 @@ struct ProductsView: View {
                     ProductDetailView(product: product)
                 }
         .sheet(isPresented: $showAddProductView) {  AddProductView()  }
+        .toolbar {
+            ToolbarItem(placement: .keyboard) {
+                HStack {
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        hideKeyboard()
+                    }) {
+                        Image(systemName: "keyboard.chevron.compact.down") // SF Symbol for the toolbar
+                            .font(.title2)
+                            .tint(.pink) // Tint the icon
+                    }
+                }
+                }
+        }
+
         .overlay{
             if !searchQuery.isEmpty && filteredProducts.isEmpty && !products.isEmpty{
                 ContentUnavailableView.search

@@ -65,7 +65,7 @@ struct ProductDetailView: View {
                             
                             if product.expirationDate == nil || (product.expirationDate?.formatted(date: .numeric, time: .omitted) ?? "").isEmpty {
                                 
-                                Text("Expired @ unknown")
+                                Text("Expired")
                                     
                                 
                             } else {
